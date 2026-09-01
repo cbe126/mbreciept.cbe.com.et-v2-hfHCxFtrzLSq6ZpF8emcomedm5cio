@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CBE Customer Receipt</title>
+    <!-- QRCode.js Library for generating scannable QR Codes -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f8f9fa;
+            padding: 15px;
+            color: #333;
+        }
+
+        /* RECEIPT CONTAINER */
+        .receipt {
+            max-width: 750px;
+            margin: 0 auto;
+            background: #ffffff;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        /* HEADER */
+        .header {
+            background: #6a0080;
+            color: white;
+            padding: 18px 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .header-logo {
+            width: 55px;
+            height: 55px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        
+        .header-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .header-text h1 {
+            font-size: 22px;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+        
+        .header-text h2 {
+            font-size: 18px;
+            font-weight: 400;
+        }
+        
+        /* COMPANY & CUSTOMER INFO */
+        .company-section, .customer-section {
+            padding: 15px 30px 10px;
+        }
+        
+        .company-section h3, .customer-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #222;
+        }
+        
+        .company-grid, .customer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 30px;
+            font-size: 14px;
+        }
+        
+        .company-row, .customer-row {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .company-label, .customer-label {
+            font-weight: 500;
+            min-width: 140px;
+            color: #333;
+        }
+        
+        .company-value, .customer-value {
+            color: #555;
+        }
+        
+        /* PAYMENT BOX */
+        .payment-box {
+            margin: 20px 25px;
+            border: 2px solid #9b30a8;
+            border-radius: 8px;
+            padding: 0;
+            overflow: hidden;
+            background: #ffffff;
+        }
+        
+        .payment-title {
+            text-align: center;
+            color: #000000;
+            font-size: 22px;
+            font-weight: 600;
+            padding: 15px 10px 10px;
+        }
+        
+        .payment-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .payment-table tr {
+            border-bottom: 1.5px solid #333;
+        }
+        
+        .payment-table tr:last-child {
+            border-bottom: none;
+        }
+        
+        .payment-table td {
+            padding: 14px 20px;
+            font-size: 15px;
+            vertical-align: middle;
+        }
+        
+        .payment-table .label-cell {
+            width: 35%;
+            padding-left: 40px;
+            color: #333;
+            font-weight: 400;
+        }
+        
+        .payment-table .value-cell {
+            text-align: right;
+            padding-right: 30px;
+            font-weight: 500;
+            color: #111;
+        }
+        
+        /* STAMP */
+        .stamp-wrapper {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: -10px 0;
+        }
+        
+        .stamp-overlay {
+            position: absolute;
+            top: 55%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            width: 170px;
+            height: 170px;
+            opacity: 0.85;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        .stamp-svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .stamp-logo-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85px;
+            height: 85px;
+            object-fit: contain;
+            filter: grayscale(100%) sepia(100%) hue-rotate(195deg) saturate(300%) contrast(1.3);
+            opacity: 0.85;
+            mix-blend-mode: multiply;
+        }
+        
+        /* AMOUNT IN WORDS & QR SECTION */
+        .amount-qr-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 30px 10px;
+            gap: 20px;
+        }
+
+        .amount-words-box {
+            flex: 1;
+            font-size: 14px;
+            color: #000000;
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px 16px;
+        }
+
+        .amount-words-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #000000;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .amount-words-text {
+            font-weight: 600;
+            color: #000000;
+        }
+
+        .qr-section {
+            text-align: center;
+            flex-shrink: 0;
+        }
+        
+        .qr-code {
+            display: inline-block;
+            padding: 5px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+        }
+        
+        /* FOOTER */
+        .footer {
+            margin: 15px 25px 25px;
+            border: 2px solid #9b30a8;
+            border-radius: 8px;
+            padding: 14px 20px;
+            text-align: center;
+            background: #ffffff;
+        }
+        
+        .footer-text {
+            color: #9b30a8;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: underline;
+            margin-bottom: 4px;
+        }
+        
+        .footer-copy {
+            color: #333;
+            font-size: 13px;
+        }
+        
+        .btn-print {
+            display: block;
+            width: calc(100% - 50px);
+            margin: 0 25px 20px;
+            padding: 13px;
+            background: #6a0080;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        /* MOBILE STYLING */
+        @media screen and (max-width: 600px) {
+            body { padding: 5px; }
+            .header { padding: 14px 18px; }
+            .header-logo { width: 45px; height: 45px; }
+            .header-text h1 { font-size: 17px; }
+            .header-text h2 { font-size: 15px; }
+            .company-section, .customer-section { padding: 12px 20px 8px; }
+            .company-grid, .customer-grid { grid-template-columns: 1fr; gap: 5px; font-size: 13px; }
+            .company-label, .customer-label { min-width: 130px; }
+            .payment-box { margin: 15px 15px; }
+            .payment-title { font-size: 18px; }
+            .payment-table td { padding: 11px 12px; font-size: 13px; }
+            .payment-table .label-cell { padding-left: 20px; width: 40%; }
+            .payment-table .value-cell { padding-right: 15px; }
+            .stamp-overlay { width: 140px; height: 140px; }
+            .stamp-logo-center { width: 70px; height: 70px; }
+            .amount-qr-container { flex-direction: column; align-items: stretch; padding: 10px 20px; gap: 15px; }
+            .qr-section { width: 100%; display: flex; justify-content: center; }
+            .footer { margin: 12px 15px 20px; }
+            .btn-print { width: calc(100% - 30px); margin: 0 15px 15px; }
+        }
+        
+        /* HIDE PRINT BUTTON WHEN PRINTING */
+        @media print {
+            body { background: white; padding: 0; }
+            .btn-print { display: none !important; }
+            .receipt { box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- RECEIPT PREVIEW -->
+    <div class="receipt">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-logo">
+                <img src="LOGO.png" alt="CBE" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTUiIGhlaWdodD0iNTUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMjcuNSIgY3k9IjI3LjUiIHI9IjI1IiBmaWxsPSIjREFBNTIwIi8+PHRleHQgeD0iNTAlIiB5PSI1NSUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiM2YTAwODAiPkNCRjwvdGV4dD48L3N2Zz4='">
+            </div>
+            <div class="header-text">
+                <h1>Commercial Bank of Ethiopia</h1>
+                <h2>Customer Receipt</h2>
+            </div>
+        </div>
+        
+        <!-- COMPANY INFO -->
+        <div class="company-section">
+            <h3>Company Information</h3>
+            <div class="company-grid">
+                <div class="company-row"><span class="company-label">Country:</span><span class="company-value">Ethiopia</span></div>
+                <div class="company-row"><span class="company-label">Email:</span><span class="company-value">info@cbe.com.et</span></div>
+                <div class="company-row"><span class="company-label">City:</span><span class="company-value">Addis Ababa</span></div>
+                <div class="company-row"><span class="company-label">Tel:</span><span class="company-value">251-551-50-04</span></div>
+                <div class="company-row"><span class="company-label">Postal Code:</span><span class="company-value">255</span></div>
+                <div class="company-row"><span class="company-label">Fax:</span><span class="company-value">251-551-45-22</span></div>
+                <div class="company-row"><span class="company-label">SWIFT Code:</span><span class="company-value">CBETETAA</span></div>
+                <div class="company-row"><span class="company-label">Address:</span><span class="company-value">Ras Desta Damtew St, 01, Kirkos</span></div>
+            </div>
+        </div>
+
+        <!-- CUSTOMER INFO -->
+        <div class="customer-section">
+            <h3>Customer Information</h3>
+            <div class="customer-grid">
+                <div class="customer-row"><span class="customer-label">Customer Name:</span><span class="customer-value" id="displayCustomer">Yaikob Tesgera Tujuba</span></div>
+                <div class="customer-row"><span class="customer-label">VAT Registration No:</span><span class="customer-value">-</span></div>
+                <div class="customer-row"><span class="customer-label">Region:</span><span class="customer-value">-</span></div>
+                <div class="customer-row"><span class="customer-label">VAT Registration Date:</span><span class="customer-value">-</span></div>
+                <div class="customer-row"><span class="customer-label">City:</span><span class="customer-value">-</span></div>
+                <div class="customer-row"><span class="customer-label">TIN (TAX ID):</span><span class="customer-value">-</span></div>
+                <div class="customer-row"><span class="customer-label">Sub City:</span><span class="customer-value">-</span></div>
+                <div class="customer-row"><span class="customer-label">Branch:</span><span class="customer-value">-</span></div>
+                <div class="customer-row"><span class="customer-label">Wereda/Kebele:</span><span class="customer-value">-</span></div>
+            </div>
+        </div>
+        
+        <!-- PAYMENT BOX -->
+        <div class="payment-box">
+            <div class="payment-title">Payment / Transaction Information</div>
+            
+            <div class="stamp-wrapper">
+                <div class="stamp-overlay">
+                    <svg class="stamp-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="100" cy="100" r="95" fill="none" stroke="#2a4fa8" stroke-width="4"/>
+                        <circle cx="100" cy="100" r="88" fill="none" stroke="#2a4fa8" stroke-width="1.8"/>
+                        <circle cx="100" cy="100" r="60" fill="none" stroke="#2a4fa8" stroke-width="2.5"/>
+                        <circle cx="100" cy="100" r="55" fill="none" stroke="#2a4fa8" stroke-width="1.2"/>
+                        
+                        <path id="amTop" d="M 100,100 m -76,0 a 76,76 0 1,1 152,0" fill="none"/>
+                        <text font-family="'Nyala', 'Kefa', 'Noto Sans Ethiopic', sans-serif" font-size="15" font-weight="900" fill="#2a4fa8" stroke="#2a4fa8" stroke-width="0.5">
+                            <textPath href="#amTop" startOffset="50%" text-anchor="middle">የኢትዮጵያ ንግድ ባንክ</textPath>
+                        </text>
+                        
+                        <path id="enBottom" d="M 100,100 m 76,0 a 76,76 0 1,1 -152,0" fill="none"/>
+                        <text font-family="Arial, sans-serif" font-size="11.5" font-weight="900" fill="#2a4fa8" stroke="#2a4fa8" stroke-width="0.5" letter-spacing="0.6">
+                            <textPath href="#enBottom" startOffset="50%" text-anchor="middle">Commercial Bank of Ethiopia</textPath>
+                        </text>
+                        
+                        <text x="18" y="105" font-size="15" font-weight="900" fill="#2a4fa8">★</text>
+                        <text x="182" y="105" font-size="15" font-weight="900" fill="#2a4fa8">★</text>
+                    </svg>
+                    <img src="LOGO.png" class="stamp-logo-center" alt="" onerror="this.style.display='none'">
+                </div>
+                
+                <table class="payment-table">
+                    <tr>
+                        <td class="label-cell">Payer</td>
+                        <td class="value-cell" id="displayPayer"></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">Account</td>
+                        <td class="value-cell" id="displayPayerAcc"></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">Receiver</td>
+                        <td class="value-cell" id="displayReceiver"></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">Account</td>
+                        <td class="value-cell" id="displayReceiverAcc"></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">Payment Date</td>
+                        <td class="value-cell" id="displayDate"></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">Reference No.</td>
+                        <td class="value-cell" id="displayRef"></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">Reason</td>
+                        <td class="value-cell" id="displayReason"></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">Transferred Amount</td>
+                        <td class="value-cell" id="displayAmount"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- AMOUNT IN WORDS & QR CODE SECTION -->
+        <div class="amount-qr-container">
+            <div class="amount-words-box">
+                <div class="amount-words-title">Amount in Word</div>
+                <div class="amount-words-text" id="displayAmountWords"></div>
+            </div>
+            <div class="qr-section">
+                <div class="qr-code" id="qrcode"></div>
+            </div>
+        </div>
+        
+        <!-- FOOTER -->
+        <div class="footer">
+            <div class="footer-text">The Bank you can always rely on.</div>
+            <div class="footer-copy">© 2026 Commercial Bank of Ethiopia. All rights reserved.</div>
+        </div>
+        
+        <button class="btn-print" onclick="window.print()">Print / Save as PDF</button>
+    </div>
+    
+    <script>
+        // ========================================================
+        // EDIT YOUR TRANSACTION DATA HERE
+        // ========================================================
+        const receiptData = {
+            payerName: "Yaikob Tesgera Tujuba",
+            payerAccount: "1******2865",
+            receiverName: "Keneni wakjira abdisa",
+            receiverAccount: "1******6528",
+            amountETB: 5000.00,
+            referenceNo: "FT2621GMCDU",
+            paymentDate: "Jul 21, 2026 10:03 PM",
+            reason: "MB Transfer"
+        };
+        // ========================================================
+
+        // Helper function: Convert number to English words
+        function numberToWords(amount) {
+            const units = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 
+                           'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+            const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+            function convert(num) {
+                if (num < 20) return units[num];
+                if (num < 100) return tens[Math.floor(num / 10)] + (num % 10 !== 0 ? ' ' + units[num % 10] : '');
+                if (num < 1000) return units[Math.floor(num / 100)] + ' Hundred' + (num % 100 !== 0 ? ' and ' + convert(num % 100) : '');
+                if (num < 1000000) return convert(Math.floor(num / 1000)) + ' Thousand' + (num % 1000 !== 0 ? ' ' + convert(num % 1000) : '');
+                return num.toString();
+            }
+
+            const parts = parseFloat(amount).toFixed(2).split('.');
+            const integerPart = parseInt(parts[0], 10);
+            const decimalPart = parseInt(parts[1], 10);
+
+            let words = integerPart === 0 ? 'Zero' : convert(integerPart);
+            words += ' ETB';
+            
+            if (decimalPart > 0) {
+                words += ' and ' + convert(decimalPart) + ' cents';
+            } else {
+                words += ' and Zero cents';
+            }
+            
+            return words + ' only';
+        }
+
+        // Render receipt content & generate QR code on load
+        window.onload = function() {
+            const data = receiptData;
+            const formattedAmount = parseFloat(data.amountETB).toFixed(2);
+
+            // Populate text elements
+            document.getElementById('displayPayer').innerText = data.payerName;
+            document.getElementById('displayPayerAcc').innerText = data.payerAccount;
+            document.getElementById('displayReceiver').innerText = data.receiverName;
+            document.getElementById('displayReceiverAcc').innerText = data.receiverAccount;
+            document.getElementById('displayAmount').innerText = 'ETB ' + formattedAmount;
+            document.getElementById('displayRef').innerText = data.referenceNo;
+            document.getElementById('displayDate').innerText = data.paymentDate;
+            document.getElementById('displayReason').innerText = data.reason;
+            
+            // Auto convert number to words
+            document.getElementById('displayAmountWords').innerText = numberToWords(data.amountETB);
+
+            // Construct payload data to embed inside the QR code
+            const qrPayload = `CBE TRANSACTION RECEIPT\n` +
+                              `Ref: ${data.referenceNo}\n` +
+                              `Date: ${data.paymentDate}\n` +
+                              `Payer: ${data.payerName} (${data.payerAccount})\n` +
+                              `Receiver: ${data.receiverName} (${data.receiverAccount})\n` +
+                              `Amount: ETB ${formattedAmount}\n` +
+                              `Reason: ${data.reason}\n` +
+                              `Status: SUCCESSFUL`;
+
+            // Generate scannable dynamic QR Code
+            new QRCode(document.getElementById('qrcode'), {
+                text: qrPayload,
+                width: 125,
+                height: 125,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        };
+    </script>
+</body>
+</html>
